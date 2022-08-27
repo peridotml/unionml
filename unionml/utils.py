@@ -65,3 +65,7 @@ def is_pytorch_model(model_type: typing.Type):
 
 def is_keras_model(model_type: typing.Type):
     return model_type.__bases__[0].__module__.startswith("keras")
+
+
+def is_pyspark_model(model_type: typing.Type):
+    return model_type.__bases__[0].__module__.startswith("pyspark")

@@ -50,8 +50,9 @@ def assert_health_check():
         ("sklearn", "LogisticRegression", check_is_fitted),
         ("pytorch", "PytorchModel", None),
         ("keras", "Sequential", None),
+        ("pyspark", "PipelineModel", None),
     ],
-    ids=["sklearn", "pytorch", "keras"],
+    ids=["sklearn", "pytorch", "keras", "pyspark"],
 )
 def test_module(ml_framework, model_cls_name, model_checker):
     module_vars = runpy.run_module(f"tests.integration.{ml_framework}_app.quickstart", run_name="__main__")
@@ -72,8 +73,9 @@ def test_module(ml_framework, model_cls_name, model_checker):
         ("sklearn", "model.joblib"),
         ("pytorch", "model.pt"),
         ("keras", "model.h5"),
+        ("pyspark", "model/"),
     ],
-    ids=["sklearn", "pytorch", "keras"],
+    ids=["sklearn", "pytorch", "keras", "pyspark"],
 )
 def test_fastapi_app(ml_framework, filename, tmp_path):
     # run the quickstart module to train a model
@@ -96,6 +98,7 @@ def test_fastapi_app(ml_framework, filename, tmp_path):
                 time.sleep(1.0)
         prediction_response = api_request_vars["prediction_response"]
         output = prediction_response.json()
+
         assert len(output) == n_samples
         assert all(isinstance(x, float) for x in output)
 

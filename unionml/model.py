@@ -18,9 +18,9 @@ from flytekit.core.tracker import TrackedInstance
 from flytekit.remote import FlyteRemote
 from flytekit.remote.executions import FlyteWorkflowExecution
 
-import unionml.type_guards as type_guards
+# import unionml.type_guards as type_guards
 from unionml.dataset import Dataset
-from unionml.utils import inner_task, is_keras_model, is_pytorch_model
+from unionml.utils import inner_task, is_keras_model, is_pyspark_model, is_pytorch_model
 
 
 @dataclass
@@ -188,7 +188,7 @@ class Model(TrackedInstance):
         if fn is None:
             return partial(self.trainer, **train_task_kwargs)
 
-        type_guards.guard_trainer(fn, self.model_type, self._dataset.parser_return_types)
+        # type_guards.guard_trainer(fn, self.model_type, self._dataset.parser_return_types)
         self._trainer = fn
         self._train_task_kwargs = train_task_kwargs
         return self._trainer
@@ -198,14 +198,14 @@ class Model(TrackedInstance):
         if fn is None:
             return partial(self.predictor, **predict_task_kwargs)
 
-        type_guards.guard_predictor(fn, self.model_type, self._dataset.feature_type)
+        # type_guards.guard_predictor(fn, self.model_type, self._dataset.feature_type)
         self._predictor = fn
         self._predict_task_kwargs = predict_task_kwargs
         return self._predictor
 
     def evaluator(self, fn):
         """Register a function for producing metrics for given model object."""
-        type_guards.guard_evaluator(fn, self.model_type, self._dataset.parser_return_types)
+        # type_guards.guard_evaluator(fn, self.model_type, self._dataset.parser_return_types)
         self._evaluator = fn
         return self._evaluator
 
@@ -820,7 +820,9 @@ class Model(TrackedInstance):
         elif is_keras_model(model_type):
             model_obj.save(file, *args, **kwargs)
             return file
-
+        elif is_pyspark_model(model_type):
+            model_obj.write().overwrite().save(str(file))
+            return file
         raise NotImplementedError(
             f"Default saver not defined for type {type(model_obj)}. Use the Model.saver decorator to define one."
         )
@@ -841,7 +843,10 @@ class Model(TrackedInstance):
             from tensorflow import keras
 
             return keras.models.load_model(file)
+        elif is_pyspark_model(model_type):
+            from pyspark.ml import PipelineModel
 
+            return PipelineModel.load(file)
         raise NotImplementedError(
             f"Default loader not defined for type {model_type}. Use the Model.loader decorator to define one."
         )
